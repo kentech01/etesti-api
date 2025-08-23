@@ -1,0 +1,61 @@
+{
+    "name": "etesti-api",
+    "version": "1.0.0",
+    "description": "Node.js API with TypeScript, Firebase, and PostgreSQL",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "test": "jest",
+        "lint": "eslint src/**/*.ts",
+        "lint:fix": "eslint src/**/*.ts --fix",
+        "typeorm": "typeorm-ts-node-commonjs",
+        "migration:generate": "npm run typeorm migration:generate -- -d src/config/database.ts",
+        "migration:run": "npm run typeorm migration:run -- -d src/config/database.ts",
+        "migration:revert": "npm run typeorm migration:revert -- -d src/config/database.ts",
+        "schema:drop": "npm run typeorm schema:drop -- -d src/config/database.ts"
+    },
+    "keywords": [
+        "nodejs",
+        "typescript",
+        "firebase",
+        "postgresql",
+        "api"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.18.2",
+        "firebase-admin": "^12.0.0",
+        "pg": "^8.11.3",
+        "typeorm": "^0.3.17",
+        "reflect-metadata": "^0.1.13",
+        "cors": "^2.8.5",
+        "helmet": "^7.1.0",
+        "dotenv": "^16.3.1",
+        "express-rate-limit": "^7.1.5",
+        "multer": "^1.4.5-lts.1",
+        "nodemailer": "^6.9.7",
+        "class-validator": "^0.14.0",
+        "class-transformer": "^0.5.1",
+        "uuid": "^9.0.1"
+    },
+    "devDependencies": {
+        "@types/express": "^4.17.21",
+        "@types/node": "^20.10.0",
+        "@types/cors": "^2.8.17",
+        "@types/pg": "^8.10.9",
+        "@types/multer": "^1.4.11",
+        "@types/nodemailer": "^6.4.14",
+        "@types/uuid": "^9.0.7",
+        "@typescript-eslint/eslint-plugin": "^6.13.0",
+        "@typescript-eslint/parser": "^6.13.0",
+        "eslint": "^8.54.0",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.3.0",
+        "jest": "^29.7.0",
+        "@types/jest": "^29.5.8",
+        "ts-jest": "^29.1.1"
+    }
+}
