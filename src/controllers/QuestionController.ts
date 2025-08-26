@@ -12,7 +12,12 @@ export class QuestionController {
         try {
             const question = questionRepository.create({
                 text: req.body.text,
+                imageUrl: req.body.imageUrl,
                 examId: req.body.examId,
+                subject: req.body.subject,
+                examPart: req.body.examPart,
+                parentId: req.body.parentId,
+                displayText: req.body.displayText,
                 orderNumber: req.body.orderNumber,
                 points: req.body.points ?? 1,
                 isActive: req.body.isActive ?? true
@@ -23,6 +28,7 @@ export class QuestionController {
             if (req.body.options && Array.isArray(req.body.options)) {
                 const options = req.body.options.map((option: any) => ({
                     text: option.text,
+                    imageUrl: option.imageUrl,
                     questionId: savedQuestion.id,
                     optionLetter: option.optionLetter,
                     isCorrect: option.isCorrect
@@ -95,6 +101,7 @@ export class QuestionController {
 
                 const options = req.body.options.map((option: any) => ({
                     text: option.text,
+                    imageUrl: option.imageUrl,
                     questionId: question.id,
                     optionLetter: option.optionLetter,
                     isCorrect: option.isCorrect
@@ -130,6 +137,38 @@ export class QuestionController {
             res.status(204).send();
         } catch (error) {
             res.status(500).json({ error: 'Failed to delete question' });
+        }
+    }
+
+    static async getQuestionsBySubject(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const { examId, subject } = req.params;
+
+            const questions = await questionRepository.find({
+                where: { examId, subject, isActive: true },
+                relations: ['options'],
+                order: { orderNumber: 'ASC' }
+            });
+
+            res.json(questions);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to get questions by subject' });
+        }
+    }
+
+    static async getQuestionsByExamPart(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const { examId, examPart } = req.params;
+
+            const questions = await questionRepository.find({
+                where: { examId, examPart, isActive: true },
+                relations: ['options'],
+                order: { orderNumber: 'ASC' }
+            });
+
+            res.json(questions);
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to get questions by exam part' });
         }
     }
 }

@@ -1,10 +1,14 @@
 import { Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Exam } from '../entities/Exam';
+import { Question } from '../entities/Question';
+import { QuestionOption } from '../entities/QuestionOption';
 import { User } from '../entities/User';
 import { AuthRequest } from '../middleware/auth';
 
 const examRepository = AppDataSource.getRepository(Exam);
+const questionRepository = AppDataSource.getRepository(Question);
+const optionRepository = AppDataSource.getRepository(QuestionOption);
 const userRepository = AppDataSource.getRepository(User);
 
 export class ExamController {
@@ -23,6 +27,81 @@ export class ExamController {
             res.status(201).json(savedExam);
         } catch (error) {
             res.status(500).json({ error: 'Failed to create exam' });
+        }
+    }
+
+    static async createCompleteExam(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const { title, description, sectorId, isActive, totalQuestions, passingScore, questions } = req.body;
+
+            if (!questions || !Array.isArray(questions) || questions.length === 0) {
+                res.status(400).json({ error: 'Questions array is required and must not be empty' });
+                return;
+            }
+
+            const exam = examRepository.create({
+                title,
+                description,
+                sectorId,
+                isActive: isActive ?? false,
+                totalQuestions: totalQuestions ?? questions.length,
+                passingScore: passingScore ?? 0
+            });
+
+            const savedExam = await examRepository.save(exam);
+
+            const createdQuestions = [];
+
+            for (const questionData of questions) {
+                const question = questionRepository.create({
+                    text: questionData.text,
+                    imageUrl: questionData.imageUrl,
+                    examId: savedExam.id,
+                    subject: questionData.subject,
+                    examPart: questionData.examPart,
+                    parentId: questionData.parentId,
+                    displayText: questionData.displayText,
+                    orderNumber: questionData.orderNumber,
+                    points: questionData.points ?? 1,
+                    isActive: questionData.isActive ?? true
+                });
+
+                const savedQuestion = await questionRepository.save(question);
+
+                if (questionData.options && Array.isArray(questionData.options)) {
+                    const options = questionData.options.map((option: any) => ({
+                        text: option.text,
+                        imageUrl: option.imageUrl,
+                        questionId: savedQuestion.id,
+                        optionLetter: option.optionLetter,
+                        isCorrect: option.isCorrect
+                    }));
+
+                    await optionRepository.save(options);
+                }
+
+                const questionWithOptions = await questionRepository.findOne({
+                    where: { id: savedQuestion.id },
+                    relations: ['options']
+                });
+
+                createdQuestions.push(questionWithOptions);
+            }
+
+            const completeExam = await examRepository.findOne({
+                where: { id: savedExam.id },
+                relations: ['sector', 'questions', 'questions.options']
+            });
+
+            res.status(201).json({
+                exam: completeExam,
+                questionsCreated: createdQuestions.length,
+                message: 'Complete exam created successfully'
+            });
+
+        } catch (error) {
+            console.error('Failed to create complete exam:', error);
+            res.status(500).json({ error: 'Failed to create complete exam' });
         }
     }
 

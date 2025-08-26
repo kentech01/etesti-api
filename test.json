@@ -1,0 +1,63 @@
+{
+  "name": "Testi i matures, Klasa 12, 2024",
+  "order": 1,
+  "sectorId": "KLASA_12",
+  "description": "Ky është një test i përgatitur për maturantët e klasës së 12-të për vitin 2024.",
+  "questions": [
+    {
+      "text": "Cili eshte kryeqyteti",
+      "subject": "FIZIKE",
+      "imageUrl": null,
+      "orderNumber": 1,
+      "options": [
+        {
+          "text": "Tirane",
+          "letter": "A",
+          "isCorrect": true
+        },
+        {
+          "text": "Prishtine",
+          "letter": "B",
+          "isCorrect": false
+        },
+        {
+          "text": "Shkup",
+          "letter": "C",
+          "isCorrect": false
+        },
+        {
+          "text": "Podgoricë",
+          "letter": "D",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+        "text": "Cili eshte kryeqyteti i Kosoves?",
+        "subject": "FIZIKE",
+        "imageUrl": null,
+        "options": [
+            {
+            "text": "Tirane",
+            "letter": "A",
+            "isCorrect": false
+            },
+            {
+            "text": "Prishtine",
+            "letter": "B",
+            "isCorrect": true
+            },
+            {
+            "text": "Shkup",
+            "letter": "C",
+            "isCorrect": false
+            },
+            {
+            "text": "Podgoricë",
+            "letter": "D",
+            "isCorrect": false
+            }
+        ]
+    }
+  ]
+}
