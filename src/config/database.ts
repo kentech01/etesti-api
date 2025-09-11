@@ -27,7 +27,7 @@ export const AppDataSource = new DataSource({
     ? ["src/migrations/*.ts"]
     : ["dist/migrations/*.js"],
   migrationsTableName: "migrations",
-  migrationsRun: !isDevelopment,
+  migrationsRun: false, // Disabled to prevent automatic migration running
 });
 
 export const initializeDatabase = async (): Promise<void> => {
