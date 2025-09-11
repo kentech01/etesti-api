@@ -10,6 +10,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+const isDevelopment = process.env.NODE_ENV === "development";
+
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.DATABASE_HOST || "localhost",
@@ -17,13 +19,15 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER || "postgres",
   password: process.env.DATABASE_PASSWORD || "password",
   database: process.env.DATABASE_NAME || "etesti_db",
-  synchronize: process.env.NODE_ENV === "development",
-  logging: process.env.NODE_ENV === "development",
+  synchronize: isDevelopment,
+  logging: isDevelopment,
   entities: [User, Sector, Exam, Question, QuestionOption, UserAnswer],
   subscribers: [],
-  migrations: ["src/migrations/*.ts"],
+  migrations: isDevelopment
+    ? ["src/migrations/*.ts"]
+    : ["dist/migrations/*.js"],
   migrationsTableName: "migrations",
-  migrationsRun: process.env.NODE_ENV === "production",
+  migrationsRun: !isDevelopment,
 });
 
 export const initializeDatabase = async (): Promise<void> => {
@@ -31,7 +35,7 @@ export const initializeDatabase = async (): Promise<void> => {
     await AppDataSource.initialize();
     console.log("Database connection established");
 
-    if (process.env.NODE_ENV === "development") {
+    if (isDevelopment) {
       await runSeeds();
     }
   } catch (error) {
