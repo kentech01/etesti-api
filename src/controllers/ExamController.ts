@@ -1,8 +1,10 @@
 import { Response } from "express";
+import { In } from "typeorm";
 import { AppDataSource } from "../config/database";
 import { Exam } from "../entities/Exam";
 import { Question } from "../entities/Question";
 import { QuestionOption } from "../entities/QuestionOption";
+import { UserAnswer } from "../entities/UserAnswer";
 // import { User } from '../entities/User';
 import { AuthRequest } from "../middleware/auth";
 
@@ -187,9 +189,39 @@ export class ExamController {
         return;
       }
 
-      await examRepository.remove(exam);
+      await AppDataSource.transaction(async (manager) => {
+        const trxExamRepo = manager.getRepository(Exam);
+        const trxQuestionRepo = manager.getRepository(Question);
+        const trxOptionRepo = manager.getRepository(QuestionOption);
+        const trxUserAnswerRepo = manager.getRepository(UserAnswer);
+
+        // Get all questions for this exam
+        const questions = await trxQuestionRepo.find({
+          where: { examId: exam.id },
+        });
+
+        const questionIds = questions.map((q) => q.id);
+
+        // Delete user answers for this exam (they have examId directly)
+        await trxUserAnswerRepo.delete({ examId: exam.id });
+
+        // Delete question options for all questions in this exam
+        if (questionIds.length > 0) {
+          await trxOptionRepo.delete({ questionId: In(questionIds) });
+        }
+
+        // Delete all questions for this exam
+        if (questionIds.length > 0) {
+          await trxQuestionRepo.delete({ examId: exam.id });
+        }
+
+        // Finally delete the exam
+        await trxExamRepo.delete({ id: exam.id });
+      });
+
       res.status(204).send();
     } catch (error) {
+      console.error("Failed to delete exam:", error);
       res.status(500).json({ error: "Failed to delete exam" });
     }
   }

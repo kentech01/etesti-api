@@ -1,36 +1,44 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { Question } from './Question';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from "typeorm";
+import { Question } from "./Question";
 
-@Entity('question_options')
+@Entity("question_options")
 export class QuestionOption {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-    @Column('text')
-    text: string;
+  @Column("text")
+  text: string;
 
-    @Column({ nullable: true })
-    imageUrl: string;
+  @Column({ nullable: true })
+  imageUrl: string;
 
-    @Column()
-    questionId: string;
+  @Column()
+  questionId: string;
 
-    @ManyToOne(() => Question, question => question.options)
-    @JoinColumn({ name: 'questionId' })
-    question: Question;
+  @ManyToOne(() => Question, (question) => question.options)
+  @JoinColumn({ name: "questionId" })
+  question: Question;
 
-    @Column({ type: 'char', length: 1 })
-    optionLetter: string;
+  @Column({ type: "char", length: 1 })
+  optionLetter: string;
 
-    @Column({ default: false })
-    isCorrect: boolean;
+  @Column({ default: false })
+  isCorrect: boolean;
 
-    @Column({ default: true })
-    isActive: boolean;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 }

@@ -88,38 +88,53 @@ export class QuestionController {
 
   static async updateQuestion(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const question = await questionRepository.findOne({
-        where: { id: req.params.id },
+      const { options: incomingOptions, ...questionData } = req.body ?? {};
+
+      const result = await AppDataSource.transaction(async (manager) => {
+        const trxQuestionRepo = manager.getRepository(Question);
+        const trxOptionRepo = manager.getRepository(QuestionOption);
+
+        const existing = await trxQuestionRepo.findOne({
+          where: { id: req.params.id },
+        });
+
+        if (!existing) {
+          return { notFound: true } as any;
+        }
+
+        trxQuestionRepo.merge(existing, questionData);
+        const saved = await trxQuestionRepo.save(existing);
+
+        if (Array.isArray(incomingOptions)) {
+          await trxOptionRepo.delete({ questionId: saved.id });
+
+          const newOptions = incomingOptions.map((option: any) => ({
+            text: option.text,
+            imageUrl: option.imageUrl,
+            questionId: saved.id,
+            optionLetter: option.optionLetter,
+            isCorrect: option.isCorrect,
+          }));
+
+          if (newOptions.length > 0) {
+            await trxOptionRepo.save(newOptions);
+          }
+        }
+
+        const reloaded = await trxQuestionRepo.findOne({
+          where: { id: saved.id },
+          relations: ["options"],
+        });
+
+        return { entity: reloaded };
       });
 
-      if (!question) {
+      if ((result as any).notFound) {
         res.status(404).json({ error: "Question not found" });
         return;
       }
 
-      questionRepository.merge(question, req.body);
-      // const updatedQuestion = await questionRepository.save(question);
-
-      if (req.body.options && Array.isArray(req.body.options)) {
-        await optionRepository.delete({ questionId: question.id });
-
-        const options = req.body.options.map((option: any) => ({
-          text: option.text,
-          imageUrl: option.imageUrl,
-          questionId: question.id,
-          optionLetter: option.optionLetter,
-          isCorrect: option.isCorrect,
-        }));
-
-        await optionRepository.save(options);
-      }
-
-      const questionWithOptions = await questionRepository.findOne({
-        where: { id: question.id },
-        relations: ["options"],
-      });
-
-      res.json(questionWithOptions);
+      res.json((result as any).entity);
     } catch (error) {
       res.status(500).json({ error: "Failed to update question" });
     }
