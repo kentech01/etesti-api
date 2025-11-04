@@ -18,6 +18,7 @@ export class QuestionController {
         examPart: req.body.examPart,
         parentId: req.body.parentId,
         displayText: req.body.displayText,
+        description: req.body.description,
         orderNumber: req.body.orderNumber,
         points: req.body.points ?? 1,
         isActive: req.body.isActive ?? true,

@@ -74,6 +74,7 @@ export class ExamController {
           examPart: questionData.examPart,
           parentId: questionData.parentId,
           displayText: questionData.displayText,
+          description: questionData.description,
           orderNumber: questionData.orderNumber,
           points: questionData.points ?? 1,
           isActive: questionData.isActive ?? true,
