@@ -42,25 +42,34 @@ export class UserAnswerController {
         },
       });
 
+      let savedAnswer;
+
       if (existingAnswer) {
-        res
-          .status(400)
-          .json({ error: "Answer already submitted for this question" });
-        return;
+        // Update existing answer to allow resubmission
+        userAnswerRepository.merge(existingAnswer, {
+          selectedOptionId: req.body.selectedOptionId,
+          isCorrect: selectedOption.isCorrect,
+          pointsEarned: selectedOption.isCorrect ? req.body.points || 1 : 0,
+          timeSpentSeconds: req.body.timeSpentSeconds || 0,
+        });
+
+        savedAnswer = await userAnswerRepository.save(existingAnswer);
+        res.status(200).json(savedAnswer);
+      } else {
+        // Create new answer
+        const userAnswer = userAnswerRepository.create({
+          userId: user.id,
+          examId: req.body.examId,
+          questionId: req.body.questionId,
+          selectedOptionId: req.body.selectedOptionId,
+          isCorrect: selectedOption.isCorrect,
+          pointsEarned: selectedOption.isCorrect ? req.body.points || 1 : 0,
+          timeSpentSeconds: req.body.timeSpentSeconds || 0,
+        });
+
+        savedAnswer = await userAnswerRepository.save(userAnswer);
+        res.status(201).json(savedAnswer);
       }
-
-      const userAnswer = userAnswerRepository.create({
-        userId: user.id,
-        examId: req.body.examId,
-        questionId: req.body.questionId,
-        selectedOptionId: req.body.selectedOptionId,
-        isCorrect: selectedOption.isCorrect,
-        pointsEarned: selectedOption.isCorrect ? req.body.points || 1 : 0,
-        timeSpentSeconds: req.body.timeSpentSeconds || 0,
-      });
-
-      const savedAnswer = await userAnswerRepository.save(userAnswer);
-      res.status(201).json(savedAnswer);
     } catch (error) {
       res.status(500).json({ error: "Failed to submit answer" });
     }

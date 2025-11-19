@@ -2,10 +2,13 @@ import { Response } from "express";
 import { AppDataSource } from "../config/database";
 import { Question } from "../entities/Question";
 import { QuestionOption } from "../entities/QuestionOption";
+import { UserAnswer } from "../entities/UserAnswer";
 import { AuthRequest } from "../middleware/auth";
+import { In } from "typeorm";
 
 const questionRepository = AppDataSource.getRepository(Question);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
+const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
 
 export class QuestionController {
   static async createQuestion(req: AuthRequest, res: Response): Promise<void> {
@@ -93,6 +96,7 @@ export class QuestionController {
       const result = await AppDataSource.transaction(async (manager) => {
         const trxQuestionRepo = manager.getRepository(Question);
         const trxOptionRepo = manager.getRepository(QuestionOption);
+        const trxUserAnswerRepo = manager.getRepository(UserAnswer);
 
         const existing = await trxQuestionRepo.findOne({
           where: { id: req.params.id },
@@ -106,18 +110,78 @@ export class QuestionController {
         const saved = await trxQuestionRepo.save(existing);
 
         if (Array.isArray(incomingOptions)) {
-          await trxOptionRepo.delete({ questionId: saved.id });
+          // Fetch existing options for this question
+          const existingOptions = await trxOptionRepo.find({
+            where: { questionId: saved.id },
+          });
 
-          const newOptions = incomingOptions.map((option: any) => ({
-            text: option.text,
-            imageUrl: option.imageUrl,
-            questionId: saved.id,
-            optionLetter: option.optionLetter,
-            isCorrect: option.isCorrect,
-          }));
+          // Create a map of existing options by optionLetter
+          const existingOptionsMap = new Map(
+            existingOptions.map((opt) => [opt.optionLetter, opt])
+          );
 
-          if (newOptions.length > 0) {
-            await trxOptionRepo.save(newOptions);
+          // Track which option IDs are in the incoming list
+          const incomingOptionLetters = new Set(
+            incomingOptions.map((opt: any) => opt.optionLetter)
+          );
+
+          // Update or create options
+          const optionPromises = incomingOptions.map(
+            async (incomingOption: any) => {
+              const existingOption = existingOptionsMap.get(
+                incomingOption.optionLetter
+              );
+
+              if (existingOption) {
+                // Update existing option
+                trxOptionRepo.merge(existingOption, {
+                  text: incomingOption.text,
+                  imageUrl: incomingOption.imageUrl,
+                  isCorrect: incomingOption.isCorrect,
+                });
+                return await trxOptionRepo.save(existingOption);
+              } else {
+                // Create new option
+                const newOption = trxOptionRepo.create({
+                  text: incomingOption.text,
+                  imageUrl: incomingOption.imageUrl,
+                  questionId: saved.id,
+                  optionLetter: incomingOption.optionLetter,
+                  isCorrect: incomingOption.isCorrect,
+                });
+                return await trxOptionRepo.save(newOption);
+              }
+            }
+          );
+
+          await Promise.all(optionPromises);
+
+          // Find options that should be deleted (not in incoming list)
+          const optionsToDelete = existingOptions.filter(
+            (opt) => !incomingOptionLetters.has(opt.optionLetter)
+          );
+
+          if (optionsToDelete.length > 0) {
+            const optionIdsToDelete = optionsToDelete.map((opt) => opt.id);
+
+            // Check which options are referenced by user_answers
+            const referencedOptions = await trxUserAnswerRepo.find({
+              where: { selectedOptionId: In(optionIdsToDelete) },
+              select: ["selectedOptionId"],
+            });
+
+            const referencedOptionIds = new Set(
+              referencedOptions.map((answer) => answer.selectedOptionId)
+            );
+
+            // Only delete options that are not referenced by user_answers
+            const safeToDeleteIds = optionIdsToDelete.filter(
+              (id) => !referencedOptionIds.has(id)
+            );
+
+            if (safeToDeleteIds.length > 0) {
+              await trxOptionRepo.delete({ id: In(safeToDeleteIds) });
+            }
           }
         }
 
@@ -136,6 +200,7 @@ export class QuestionController {
 
       res.json((result as any).entity);
     } catch (error) {
+      console.error("Failed to update question:", error);
       res.status(500).json({ error: "Failed to update question" });
     }
   }
@@ -151,10 +216,24 @@ export class QuestionController {
         return;
       }
 
-      await optionRepository.delete({ questionId: question.id });
-      await questionRepository.remove(question);
+      await AppDataSource.transaction(async (manager) => {
+        const trxUserAnswerRepo = manager.getRepository(UserAnswer);
+        const trxOptionRepo = manager.getRepository(QuestionOption);
+        const trxQuestionRepo = manager.getRepository(Question);
+
+        // First, delete all user answers for this question
+        await trxUserAnswerRepo.delete({ questionId: question.id });
+
+        // Then delete all options for this question
+        await trxOptionRepo.delete({ questionId: question.id });
+
+        // Finally, delete the question itself
+        await trxQuestionRepo.delete({ id: question.id });
+      });
+
       res.status(204).send();
     } catch (error) {
+      console.error("Failed to delete question:", error);
       res.status(500).json({ error: "Failed to delete question" });
     }
   }
