@@ -5,27 +5,27 @@ export class InitialSchema1700000000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `CREATE TABLE "sectors" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "displayName" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_1234567890abcdef" UNIQUE ("name"), CONSTRAINT "PK_sectors" PRIMARY KEY ("id"))`
+      `CREATE TABLE "sectors" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "displayName" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_sectors_name" UNIQUE ("name"), CONSTRAINT "PK_sectors" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "firebaseUid" character varying NOT NULL, "email" character varying NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "avatarUrl" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_1234567890abcdef" UNIQUE ("firebaseUid"), CONSTRAINT "PK_users" PRIMARY KEY ("id"))`
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "firebaseUid" character varying NOT NULL, "email" character varying NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "avatarUrl" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_users_firebaseUid" UNIQUE ("firebaseUid"), CONSTRAINT "PK_users" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
-      `CREATE TABLE "exams" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "sectorId" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT false, "totalQuestions" integer NOT NULL DEFAULT '0', "passingScore" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_exams" PRIMARY KEY ("id"))`
+      `CREATE TABLE "exams" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "sectorId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT false, "totalQuestions" integer NOT NULL DEFAULT '0', "passingScore" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_exams" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
-      `CREATE TABLE "questions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "examId" character varying NOT NULL, "subject" character(20) NOT NULL, "examPart" character(1) NOT NULL DEFAULT 'A', "parentId" character varying, "displayText" text, "description" text, "orderNumber" integer NOT NULL, "points" integer NOT NULL DEFAULT '1', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_questions" PRIMARY KEY ("id"))`
+      `CREATE TABLE "questions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "examId" uuid NOT NULL, "subject" character(20) NOT NULL, "examPart" character(1) NOT NULL DEFAULT 'A', "parentId" uuid, "displayText" text, "description" text, "orderNumber" integer NOT NULL, "points" integer NOT NULL DEFAULT '1', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_questions" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
-      `CREATE TABLE "question_options" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "questionId" character varying NOT NULL, "optionLetter" character(1) NOT NULL, "isCorrect" boolean NOT NULL DEFAULT false, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_question_options" PRIMARY KEY ("id"))`
+      `CREATE TABLE "question_options" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "questionId" uuid NOT NULL, "optionLetter" character(1) NOT NULL, "isCorrect" boolean NOT NULL DEFAULT false, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_question_options" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
-      `CREATE TABLE "user_answers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" character varying NOT NULL, "examId" character varying NOT NULL, "questionId" character varying NOT NULL, "selectedOptionId" character varying NOT NULL, "isCorrect" boolean NOT NULL DEFAULT false, "pointsEarned" integer NOT NULL DEFAULT '0', "timeSpentSeconds" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_user_answers" PRIMARY KEY ("id"))`
+      `CREATE TABLE "user_answers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "userId" uuid NOT NULL, "examId" uuid NOT NULL, "questionId" uuid NOT NULL, "selectedOptionId" uuid NOT NULL, "isCorrect" boolean NOT NULL DEFAULT false, "pointsEarned" integer NOT NULL DEFAULT '0', "timeSpentSeconds" integer NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_user_answers" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(

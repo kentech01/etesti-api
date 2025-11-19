@@ -5,6 +5,8 @@ export interface AuthRequest extends Request {
   user?: {
     uid: string;
     email: string;
+    name?: string;
+    picture?: string;
   };
 }
 
@@ -31,6 +33,8 @@ export const authenticateToken = async (
     req.user = {
       uid: decodedToken.uid,
       email: decodedToken.email || "",
+      name: decodedToken.name,
+      picture: decodedToken.picture,
     };
     next();
   } catch (error) {
@@ -57,6 +61,8 @@ export const optionalAuth = async (
       req.user = {
         uid: decodedToken.uid,
         email: decodedToken.email || "",
+        name: decodedToken.name,
+        picture: decodedToken.picture,
       };
     }
     next();

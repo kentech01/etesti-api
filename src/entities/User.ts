@@ -1,35 +1,42 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { UserAnswer } from './UserAnswer';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from "typeorm";
+import { UserAnswer } from "./UserAnswer";
 
-@Entity('users')
+@Entity("users")
 export class User {
-    @PrimaryGeneratedColumn('uuid')
-    id: string;
+  @PrimaryGeneratedColumn("uuid")
+  id: string;
 
-    @Column({ unique: true })
-    firebaseUid: string;
+  @Column({ unique: true })
+  firebaseUid: string;
 
-    @Column()
-    email: string;
+  @Column()
+  email: string;
 
-    @Column()
-    firstName: string;
+  @Column({ nullable: true })
+  firstName: string;
 
-    @Column()
-    lastName: string;
+  @Column({ nullable: true })
+  lastName: string;
 
-    @Column({ nullable: true })
-    avatarUrl: string;
+  @Column({ nullable: true })
+  avatarUrl: string;
 
-    @Column({ default: true })
-    isActive: boolean;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-    @OneToMany(() => UserAnswer, userAnswer => userAnswer.user)
-    userAnswers: UserAnswer[];
+  @OneToMany(() => UserAnswer, (userAnswer) => userAnswer.user)
+  userAnswers: UserAnswer[];
 }
