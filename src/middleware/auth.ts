@@ -37,8 +37,48 @@ export const authenticateToken = async (
       picture: decodedToken.picture,
     };
     next();
-  } catch (error) {
-    res.status(403).json({ error: "Invalid token" });
+  } catch (error: any) {
+    // Log the actual error for debugging
+    console.error("Token verification failed:", {
+      error: error?.message || error,
+      code: error?.code,
+      stack: error?.stack,
+    });
+
+    // Provide more specific error messages based on error type
+    if (error?.code === "auth/id-token-expired") {
+      res.status(401).json({ 
+        error: "Token expired", 
+        code: "TOKEN_EXPIRED",
+        message: "Your authentication token has expired. Please refresh your token." 
+      });
+      return;
+    }
+
+    if (error?.code === "auth/argument-error") {
+      res.status(401).json({ 
+        error: "Invalid token format", 
+        code: "INVALID_TOKEN_FORMAT",
+        message: "The provided token is malformed." 
+      });
+      return;
+    }
+
+    if (error?.code === "auth/id-token-revoked") {
+      res.status(401).json({ 
+        error: "Token revoked", 
+        code: "TOKEN_REVOKED",
+        message: "Your authentication token has been revoked. Please sign in again." 
+      });
+      return;
+    }
+
+    // Generic error for other cases
+    res.status(403).json({ 
+      error: "Invalid token", 
+      code: "INVALID_TOKEN",
+      message: error?.message || "Token verification failed" 
+    });
   }
 };
 
@@ -66,7 +106,15 @@ export const optionalAuth = async (
       };
     }
     next();
-  } catch (error) {
+  } catch (error: any) {
+    // For optional auth, we silently fail and continue
+    // but log for debugging purposes
+    if (error?.code && error?.code !== "auth/id-token-expired") {
+      console.warn("Optional auth token verification failed:", {
+        error: error?.message || error,
+        code: error?.code,
+      });
+    }
     next();
   }
 };
