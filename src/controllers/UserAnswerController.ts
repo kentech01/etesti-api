@@ -1,14 +1,14 @@
 import { Response } from "express";
 import { AppDataSource } from "../config/database";
 import { UserAnswer } from "../entities/UserAnswer";
-import { User } from "../entities/User";
 import { QuestionOption } from "../entities/QuestionOption";
+import { Question } from "../entities/Question";
 import { AuthRequest } from "../middleware/auth";
 import { getOrCreateUser } from "./UserController";
 
 const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
-const userRepository = AppDataSource.getRepository(User);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
+const questionRepository = AppDataSource.getRepository(Question);
 
 export class UserAnswerController {
   static async submitAnswer(req: AuthRequest, res: Response): Promise<void> {
@@ -34,20 +34,22 @@ export class UserAnswerController {
         return;
       }
 
+      // Check for existing answer for THIS SPECIFIC option
+      // This allows multiple options to be selected for the same question
       const existingAnswer = await userAnswerRepository.findOne({
         where: {
           userId: user.id,
           examId: req.body.examId,
           questionId: req.body.questionId,
+          selectedOptionId: req.body.selectedOptionId,
         },
       });
 
       let savedAnswer;
 
       if (existingAnswer) {
-        // Update existing answer to allow resubmission
+        // Update existing answer for this specific option
         userAnswerRepository.merge(existingAnswer, {
-          selectedOptionId: req.body.selectedOptionId,
           isCorrect: selectedOption.isCorrect,
           pointsEarned: selectedOption.isCorrect ? req.body.points || 1 : 0,
           timeSpentSeconds: req.body.timeSpentSeconds || 0,
@@ -56,7 +58,7 @@ export class UserAnswerController {
         savedAnswer = await userAnswerRepository.save(existingAnswer);
         res.status(200).json(savedAnswer);
       } else {
-        // Create new answer
+        // Create new answer for this option
         const userAnswer = userAnswerRepository.create({
           userId: user.id,
           examId: req.body.examId,
@@ -124,15 +126,46 @@ export class UserAnswerController {
 
       const { examId } = req.params;
 
+      // Get total number of questions in the exam
+      const totalQuestions = await questionRepository.count({
+        where: { examId, isActive: true },
+      });
+
+      // Get all user answers for this exam
       const userAnswers = await userAnswerRepository.find({
         where: { userId: user.id, examId },
         relations: ["question", "selectedOption"],
       });
 
-      const totalQuestions = userAnswers.length;
-      const correctAnswers = userAnswers.filter(
-        (answer) => answer.isCorrect
-      ).length;
+      // Get all questions with their correct options
+      const questions = await questionRepository.find({
+        where: { examId, isActive: true },
+        relations: ["options"],
+      });
+
+      // Create a map of questionId -> correct option IDs
+      const correctOptionsByQuestion = new Map<string, Set<string>>();
+      questions.forEach((question) => {
+        const correctOptionIds = new Set(
+          question.options
+            .filter((option) => option.isCorrect)
+            .map((option) => option.id)
+        );
+        correctOptionsByQuestion.set(question.id, correctOptionIds);
+      });
+
+      // Group user answers by questionId
+      const answersByQuestion = new Map<string, UserAnswer[]>();
+      userAnswers.forEach((answer) => {
+        const questionId = answer.questionId;
+        if (!answersByQuestion.has(questionId)) {
+          answersByQuestion.set(questionId, []);
+        }
+        answersByQuestion.get(questionId)!.push(answer);
+      });
+
+      // Evaluate each question
+      let correctAnswers = 0;
       const totalPoints = userAnswers.reduce(
         (sum, answer) => sum + answer.pointsEarned,
         0
@@ -142,11 +175,44 @@ export class UserAnswerController {
         0
       );
 
+      questions.forEach((question) => {
+        const correctOptionIds = correctOptionsByQuestion.get(question.id);
+        const userAnswersForQuestion = answersByQuestion.get(question.id) || [];
+
+        if (!correctOptionIds || correctOptionIds.size === 0) {
+          // No correct options defined, skip this question
+          return;
+        }
+
+        // Get the option IDs selected by the user for this question
+        const selectedOptionIds = new Set(
+          userAnswersForQuestion.map((answer) => answer.selectedOptionId)
+        );
+
+        // Check if user selected ALL correct options
+        const hasAllCorrectOptions = Array.from(correctOptionIds).every(
+          (correctOptionId) => selectedOptionIds.has(correctOptionId)
+        );
+
+        // Check if user selected NO incorrect options
+        // (i.e., all selected options are correct)
+        const hasNoIncorrectOptions = Array.from(selectedOptionIds).every(
+          (selectedOptionId) => correctOptionIds.has(selectedOptionId)
+        );
+
+        // Question is correct only if both conditions are met
+        if (hasAllCorrectOptions && hasNoIncorrectOptions) {
+          correctAnswers++;
+        }
+      });
+
+      const incorrectAnswers = totalQuestions - correctAnswers;
+
       const results = {
         examId,
         totalQuestions,
         correctAnswers,
-        incorrectAnswers: totalQuestions - correctAnswers,
+        incorrectAnswers,
         accuracy:
           totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0,
         totalPoints,

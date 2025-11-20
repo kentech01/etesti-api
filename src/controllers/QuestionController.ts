@@ -8,7 +8,7 @@ import { In } from "typeorm";
 
 const questionRepository = AppDataSource.getRepository(Question);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
-const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
+// const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
 
 export class QuestionController {
   static async createQuestion(req: AuthRequest, res: Response): Promise<void> {

@@ -45,7 +45,7 @@ export async function getOrCreateUser(
       email,
       firstName: firstName || "User",
       lastName: lastName || "",
-      avatarUrl: picture || null,
+      avatarUrl: picture || undefined,
     });
 
     user = await userRepository.save(user);
