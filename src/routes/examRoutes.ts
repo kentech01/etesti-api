@@ -9,6 +9,8 @@ router.get('/sector/:sectorId', ExamController.getExamsBySector);
 router.get('/:id', ExamController.getExamById);
 router.post('/', authenticateToken, ExamController.createExam);
 router.post('/complete', authenticateToken, ExamController.createCompleteExam);
+router.post('/:id/complete', authenticateToken, ExamController.completeExam);
+router.post('/:id/reset', authenticateToken, ExamController.resetExam);
 router.put('/:id', authenticateToken, ExamController.updateExam);
 router.delete('/:id', authenticateToken, ExamController.deleteExam);
 

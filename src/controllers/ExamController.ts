@@ -5,13 +5,13 @@ import { Exam } from "../entities/Exam";
 import { Question } from "../entities/Question";
 import { QuestionOption } from "../entities/QuestionOption";
 import { UserAnswer } from "../entities/UserAnswer";
-// import { User } from '../entities/User';
+import { getOrCreateUser } from "./UserController";
 import { AuthRequest } from "../middleware/auth";
 
 const examRepository = AppDataSource.getRepository(Exam);
 const questionRepository = AppDataSource.getRepository(Question);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
-// const userRepository = AppDataSource.getRepository(User);
+const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
 
 export class ExamController {
   static async createExam(req: AuthRequest, res: Response): Promise<void> {
@@ -242,6 +242,82 @@ export class ExamController {
       res.json(exams);
     } catch (error) {
       res.status(500).json({ error: "Failed to get exams by sector" });
+    }
+  }
+
+  static async completeExam(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      const { id } = req.params;
+
+      const exam = await examRepository.findOne({
+        where: { id },
+      });
+
+      if (!exam) {
+        res.status(404).json({ error: "Exam not found" });
+        return;
+      }
+
+      // Mark exam as completed
+      exam.isCompleted = true;
+      const updatedExam = await examRepository.save(exam);
+
+      res.json(updatedExam);
+    } catch (error) {
+      console.error("Failed to complete exam:", error);
+      res.status(500).json({ error: "Failed to complete exam" });
+    }
+  }
+
+  static async resetExam(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: "User not authenticated" });
+        return;
+      }
+
+      const { id } = req.params;
+
+      const exam = await examRepository.findOne({
+        where: { id },
+      });
+
+      if (!exam) {
+        res.status(404).json({ error: "Exam not found" });
+        return;
+      }
+
+      // Get current user
+      const user = await getOrCreateUser(
+        req.user.uid,
+        req.user.email,
+        req.user.name,
+        req.user.picture
+      );
+
+      // Delete this user's answers for this exam
+      await userAnswerRepository.delete({
+        userId: user.id,
+        examId: exam.id,
+      });
+
+      // Reset global exam flags
+      exam.isCompleted = false;
+      exam.hasPassed = false;
+      const updatedExam = await examRepository.save(exam);
+
+      res.json({
+        message: "Exam reset successfully",
+        exam: updatedExam,
+      });
+    } catch (error) {
+      console.error("Failed to reset exam:", error);
+      res.status(500).json({ error: "Failed to reset exam" });
     }
   }
 }

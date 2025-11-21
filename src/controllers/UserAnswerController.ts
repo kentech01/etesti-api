@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { AppDataSource } from "../config/database";
 import { UserAnswer } from "../entities/UserAnswer";
+import { Exam } from "../entities/Exam";
 import { QuestionOption } from "../entities/QuestionOption";
 import { Question } from "../entities/Question";
 import { AuthRequest } from "../middleware/auth";
@@ -9,6 +10,7 @@ import { getOrCreateUser } from "./UserController";
 const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
 const questionRepository = AppDataSource.getRepository(Question);
+const examRepository = AppDataSource.getRepository(Exam);
 
 export class UserAnswerController {
   static async submitAnswer(req: AuthRequest, res: Response): Promise<void> {
@@ -207,14 +209,26 @@ export class UserAnswerController {
       });
 
       const incorrectAnswers = totalQuestions - correctAnswers;
+      const accuracy =
+        totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+      // Determine if user has passed (>= 40% correct)
+      const hasPassed = accuracy >= 40;
+
+      // Update exam's hasPassed flag (note: this is global, not per-user)
+      const exam = await examRepository.findOne({ where: { id: examId } });
+      if (exam) {
+        exam.hasPassed = hasPassed;
+        await examRepository.save(exam);
+      }
 
       const results = {
         examId,
         totalQuestions,
         correctAnswers,
         incorrectAnswers,
-        accuracy:
-          totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0,
+        accuracy,
+        hasPassed,
         totalPoints,
         totalTimeSpent,
         answers: userAnswers,

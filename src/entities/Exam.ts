@@ -33,6 +33,12 @@ export class Exam {
   @Column({ default: false })
   isActive: boolean;
 
+  @Column({ default: false })
+  isCompleted: boolean;
+
+  @Column({ default: false })
+  hasPassed: boolean;
+
   @Column({ type: "int", default: 0 })
   totalQuestions: number;
 
