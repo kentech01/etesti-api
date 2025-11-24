@@ -11,6 +11,7 @@ import {
 import { Exam } from "./Exam";
 import { QuestionOption } from "./QuestionOption";
 import { UserAnswer } from "./UserAnswer";
+import { Subject } from "./Subject";
 
 @Entity("questions")
 export class Question {
@@ -30,8 +31,15 @@ export class Question {
   @JoinColumn({ name: "examId" })
   exam: Exam;
 
-  @Column({ type: "char", length: 20 })
-  subject: string;
+  @Column({ nullable: true })
+  subjectId: string;
+
+  @ManyToOne(() => Subject, (subject) => subject.questions)
+  @JoinColumn({ name: "subjectId" })
+  subject: Subject;
+
+  @Column({ type: "char", length: 20, nullable: true })
+  subjectValue: string;
 
   @Column({ type: "char", length: 1, default: "A" })
   examPart: string;

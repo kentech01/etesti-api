@@ -10,6 +10,7 @@ import sectorRoutes from "./routes/sectorRoutes";
 import examRoutes from "./routes/examRoutes";
 import questionRoutes from "./routes/questionRoutes";
 import userAnswerRoutes from "./routes/userAnswerRoutes";
+import subjectRoutes from "./routes/subjectRoutes";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use("/api/sectors", sectorRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/user-answers", authRateLimiter, userAnswerRoutes);
+app.use("/api/subjects", subjectRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "OK", timestamp: new Date().toISOString() });

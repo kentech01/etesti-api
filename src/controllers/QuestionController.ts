@@ -17,7 +17,8 @@ export class QuestionController {
         text: req.body.text,
         imageUrl: req.body.imageUrl,
         examId: req.body.examId,
-        subject: req.body.subject,
+        subjectId: req.body.subjectId,
+        subjectValue: req.body.subjectValue,
         examPart: req.body.examPart,
         parentId: req.body.parentId,
         displayText: req.body.displayText,
@@ -43,7 +44,7 @@ export class QuestionController {
 
       const questionWithOptions = await questionRepository.findOne({
         where: { id: savedQuestion.id },
-        relations: ["options"],
+        relations: ["options", "subject"],
       });
 
       res.status(201).json(questionWithOptions);
@@ -61,7 +62,7 @@ export class QuestionController {
 
       const questions = await questionRepository.find({
         where: { examId, isActive: true },
-        relations: ["options"],
+        relations: ["options", "subject"],
         order: { orderNumber: "ASC" },
       });
 
@@ -75,7 +76,7 @@ export class QuestionController {
     try {
       const question = await questionRepository.findOne({
         where: { id: req.params.id },
-        relations: ["options"],
+        relations: ["options", "subject"],
       });
 
       if (!question) {
@@ -187,7 +188,7 @@ export class QuestionController {
 
         const reloaded = await trxQuestionRepo.findOne({
           where: { id: saved.id },
-          relations: ["options"],
+          relations: ["options", "subject"],
         });
 
         return { entity: reloaded };
@@ -243,11 +244,11 @@ export class QuestionController {
     res: Response
   ): Promise<void> {
     try {
-      const { examId, subject } = req.params;
+      const { examId, subjectId } = req.params;
 
       const questions = await questionRepository.find({
-        where: { examId, subject, isActive: true },
-        relations: ["options"],
+        where: { examId, subjectId, isActive: true },
+        relations: ["options", "subject"],
         order: { orderNumber: "ASC" },
       });
 
@@ -266,7 +267,7 @@ export class QuestionController {
 
       const questions = await questionRepository.find({
         where: { examId, examPart, isActive: true },
-        relations: ["options"],
+        relations: ["options", "subject"],
         order: { orderNumber: "ASC" },
       });
 

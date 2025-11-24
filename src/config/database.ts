@@ -5,6 +5,7 @@ import { Exam } from "../entities/Exam";
 import { Question } from "../entities/Question";
 import { QuestionOption } from "../entities/QuestionOption";
 import { UserAnswer } from "../entities/UserAnswer";
+import { Subject } from "../entities/Subject";
 import { runSeeds } from "./seedData";
 import dotenv from "dotenv";
 
@@ -21,7 +22,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DATABASE_NAME || "etesti_db",
   synchronize: isDevelopment,
   logging: isDevelopment,
-  entities: [User, Sector, Exam, Question, QuestionOption, UserAnswer],
+  entities: [User, Sector, Exam, Question, QuestionOption, UserAnswer, Subject],
   subscribers: [],
   migrations: isDevelopment
     ? ["src/migrations/*.ts"]

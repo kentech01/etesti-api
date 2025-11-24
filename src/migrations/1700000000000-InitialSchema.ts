@@ -9,6 +9,10 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
+      `CREATE TABLE "subjects" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "label" character varying NOT NULL, "value" character varying NOT NULL, "sectorId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_subjects_value_sectorId" UNIQUE ("value", "sectorId"), CONSTRAINT "PK_subjects" PRIMARY KEY ("id"))`
+    );
+
+    await queryRunner.query(
       `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "firebaseUid" character varying NOT NULL, "email" character varying NOT NULL, "firstName" character varying NOT NULL, "lastName" character varying NOT NULL, "avatarUrl" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_users_firebaseUid" UNIQUE ("firebaseUid"), CONSTRAINT "PK_users" PRIMARY KEY ("id"))`
     );
 
@@ -17,7 +21,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE "questions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "examId" uuid NOT NULL, "subject" character(20) NOT NULL, "examPart" character(1) NOT NULL DEFAULT 'A', "parentId" uuid, "displayText" text, "description" text, "orderNumber" integer NOT NULL, "points" integer NOT NULL DEFAULT '1', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_questions" PRIMARY KEY ("id"))`
+      `CREATE TABLE "questions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "text" text NOT NULL, "imageUrl" character varying, "examId" uuid NOT NULL, "subjectId" uuid, "subjectValue" character(20), "examPart" character(1) NOT NULL DEFAULT 'A', "parentId" uuid, "displayText" text, "description" text, "orderNumber" integer NOT NULL, "points" integer NOT NULL DEFAULT '1', "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_questions" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
@@ -29,11 +33,19 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
+      `ALTER TABLE "subjects" ADD CONSTRAINT "FK_subjects_sector" FOREIGN KEY ("sectorId") REFERENCES "sectors"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+    );
+
+    await queryRunner.query(
       `ALTER TABLE "exams" ADD CONSTRAINT "FK_exams_sector" FOREIGN KEY ("sectorId") REFERENCES "sectors"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
 
     await queryRunner.query(
       `ALTER TABLE "questions" ADD CONSTRAINT "FK_questions_exam" FOREIGN KEY ("examId") REFERENCES "exams"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+    );
+
+    await queryRunner.query(
+      `ALTER TABLE "questions" ADD CONSTRAINT "FK_questions_subject" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
     );
 
     await queryRunner.query(
@@ -74,16 +86,23 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       `ALTER TABLE "question_options" DROP CONSTRAINT "FK_options_question"`
     );
     await queryRunner.query(
+      `ALTER TABLE "questions" DROP CONSTRAINT "FK_questions_subject"`
+    );
+    await queryRunner.query(
       `ALTER TABLE "questions" DROP CONSTRAINT "FK_questions_exam"`
     );
     await queryRunner.query(
       `ALTER TABLE "exams" DROP CONSTRAINT "FK_exams_sector"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "subjects" DROP CONSTRAINT "FK_subjects_sector"`
     );
     await queryRunner.query(`DROP TABLE "user_answers"`);
     await queryRunner.query(`DROP TABLE "question_options"`);
     await queryRunner.query(`DROP TABLE "questions"`);
     await queryRunner.query(`DROP TABLE "exams"`);
     await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TABLE "subjects"`);
     await queryRunner.query(`DROP TABLE "sectors"`);
   }
 }
