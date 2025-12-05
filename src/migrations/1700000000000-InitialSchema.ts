@@ -17,7 +17,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE "exams" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "sectorId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT false, "isCompleted" boolean NOT NULL DEFAULT false, "hasPassed" boolean NOT NULL DEFAULT false, "totalQuestions" integer NOT NULL DEFAULT '0', "passingScore" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_exams" PRIMARY KEY ("id"))`
+      `CREATE TABLE "exams" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "title" character varying NOT NULL, "description" text NOT NULL, "sectorId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT false, "isCompleted" boolean NOT NULL DEFAULT false, "hasPassed" boolean NOT NULL DEFAULT false, "totalQuestions" integer NOT NULL DEFAULT '0', "passingScore" integer NOT NULL DEFAULT '0', "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP, CONSTRAINT "PK_exams" PRIMARY KEY ("id"))`
     );
 
     await queryRunner.query(
