@@ -95,21 +95,52 @@ export const seedSubjects = async (): Promise<void> => {
       return;
     }
 
-    // Seed subjects for KLASA_9 (grades 6-9)
+    // Combine all unique subjects from both lists
+    const allSubjectsMap = new Map<
+      string,
+      { label: string; value: string; sectors: Sector[] }
+    >();
+
+    // Add subjects from KLASA_9
     for (const subjectData of SUBJECTS_6_9) {
-      const subject = subjectRepository.create({
-        ...subjectData,
-        sectorId: klasa9Sector.id,
-        isActive: true,
-      });
-      await subjectRepository.save(subject);
+      if (!allSubjectsMap.has(subjectData.value)) {
+        allSubjectsMap.set(subjectData.value, {
+          label: subjectData.label,
+          value: subjectData.value,
+          sectors: [klasa9Sector],
+        });
+      } else {
+        // Subject already exists, add this sector to it
+        const existing = allSubjectsMap.get(subjectData.value)!;
+        if (!existing.sectors.find((s) => s.id === klasa9Sector.id)) {
+          existing.sectors.push(klasa9Sector);
+        }
+      }
     }
 
-    // Seed subjects for KLASA_12 (grades 10-12)
+    // Add subjects from KLASA_12
     for (const subjectData of SUBJECTS_10_12) {
+      if (!allSubjectsMap.has(subjectData.value)) {
+        allSubjectsMap.set(subjectData.value, {
+          label: subjectData.label,
+          value: subjectData.value,
+          sectors: [klasa12Sector],
+        });
+      } else {
+        // Subject already exists, add this sector to it
+        const existing = allSubjectsMap.get(subjectData.value)!;
+        if (!existing.sectors.find((s) => s.id === klasa12Sector.id)) {
+          existing.sectors.push(klasa12Sector);
+        }
+      }
+    }
+
+    // Create unique subjects with their associated sectors
+    for (const subjectData of allSubjectsMap.values()) {
       const subject = subjectRepository.create({
-        ...subjectData,
-        sectorId: klasa12Sector.id,
+        label: subjectData.label,
+        value: subjectData.value,
+        sectors: subjectData.sectors,
         isActive: true,
       });
       await subjectRepository.save(subject);

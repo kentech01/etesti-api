@@ -1,16 +1,19 @@
 import { Response } from "express";
 import { AppDataSource } from "../config/database";
 import { Subject } from "../entities/Subject";
+import { Sector } from "../entities/Sector";
 import { AuthRequest } from "../middleware/auth";
+import { In } from "typeorm";
 
 const subjectRepository = AppDataSource.getRepository(Subject);
+const sectorRepository = AppDataSource.getRepository(Sector);
 
 export class SubjectController {
   static async getAllSubjects(_req: AuthRequest, res: Response): Promise<void> {
     try {
       const subjects = await subjectRepository.find({
         where: { isActive: true },
-        relations: ["sector"],
+        relations: ["sectors"],
         order: { label: "ASC" },
       });
       res.json(subjects);
@@ -26,11 +29,13 @@ export class SubjectController {
     try {
       const { sectorId } = req.params;
 
-      const subjects = await subjectRepository.find({
-        where: { sectorId, isActive: true },
-        relations: ["sector"],
-        order: { label: "ASC" },
-      });
+      const subjects = await subjectRepository
+        .createQueryBuilder("subject")
+        .leftJoinAndSelect("subject.sectors", "sector")
+        .where("sector.id = :sectorId", { sectorId })
+        .andWhere("subject.isActive = :isActive", { isActive: true })
+        .orderBy("subject.label", "ASC")
+        .getMany();
 
       res.json(subjects);
     } catch (error) {
@@ -38,14 +43,11 @@ export class SubjectController {
     }
   }
 
-  static async getSubjectById(
-    req: AuthRequest,
-    res: Response
-  ): Promise<void> {
+  static async getSubjectById(req: AuthRequest, res: Response): Promise<void> {
     try {
       const subject = await subjectRepository.findOne({
         where: { id: req.params.id },
-        relations: ["sector"],
+        relations: ["sectors"],
       });
 
       if (!subject) {
@@ -61,16 +63,34 @@ export class SubjectController {
 
   static async createSubject(req: AuthRequest, res: Response): Promise<void> {
     try {
+      const { label, value, sectorIds, isActive } = req.body;
+
+      // Get sectors if sectorIds are provided
+      let sectors: Sector[] = [];
+      if (sectorIds && Array.isArray(sectorIds) && sectorIds.length > 0) {
+        sectors = await sectorRepository.find({
+          where: { id: In(sectorIds) },
+        });
+      }
+
       const subject = subjectRepository.create({
-        label: req.body.label,
-        value: req.body.value,
-        sectorId: req.body.sectorId,
-        isActive: req.body.isActive ?? true,
+        label,
+        value,
+        sectors,
+        isActive: isActive ?? true,
       });
 
       const savedSubject = await subjectRepository.save(subject);
-      res.status(201).json(savedSubject);
+
+      // Reload with relations
+      const subjectWithSectors = await subjectRepository.findOne({
+        where: { id: savedSubject.id },
+        relations: ["sectors"],
+      });
+
+      res.status(201).json(subjectWithSectors);
     } catch (error) {
+      console.error("Failed to create subject:", error);
       res.status(500).json({ error: "Failed to create subject" });
     }
   }
@@ -79,6 +99,7 @@ export class SubjectController {
     try {
       const subject = await subjectRepository.findOne({
         where: { id: req.params.id },
+        relations: ["sectors"],
       });
 
       if (!subject) {
@@ -86,10 +107,33 @@ export class SubjectController {
         return;
       }
 
-      subjectRepository.merge(subject, req.body);
+      const { sectorIds, ...otherFields } = req.body;
+
+      // Update sectors if sectorIds are provided
+      if (sectorIds !== undefined) {
+        if (Array.isArray(sectorIds) && sectorIds.length > 0) {
+          const sectors = await sectorRepository.find({
+            where: { id: In(sectorIds) },
+          });
+          subject.sectors = sectors;
+        } else {
+          subject.sectors = [];
+        }
+      }
+
+      // Update other fields
+      subjectRepository.merge(subject, otherFields);
       const updatedSubject = await subjectRepository.save(subject);
-      res.json(updatedSubject);
+
+      // Reload with relations
+      const subjectWithSectors = await subjectRepository.findOne({
+        where: { id: updatedSubject.id },
+        relations: ["sectors"],
+      });
+
+      res.json(subjectWithSectors);
     } catch (error) {
+      console.error("Failed to update subject:", error);
       res.status(500).json({ error: "Failed to update subject" });
     }
   }
@@ -112,4 +156,3 @@ export class SubjectController {
     }
   }
 }
-
