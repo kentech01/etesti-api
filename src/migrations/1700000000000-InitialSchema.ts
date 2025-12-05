@@ -9,7 +9,11 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `CREATE TABLE "subjects" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "label" character varying NOT NULL, "value" character varying NOT NULL, "sectorId" uuid NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_subjects_value_sectorId" UNIQUE ("value", "sectorId"), CONSTRAINT "PK_subjects" PRIMARY KEY ("id"))`
+      `CREATE TABLE "subjects" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "label" character varying NOT NULL, "value" character varying NOT NULL, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_subjects_value" UNIQUE ("value"), CONSTRAINT "PK_subjects" PRIMARY KEY ("id"))`
+    );
+
+    await queryRunner.query(
+      `CREATE TABLE "subject_sectors" ("subjectId" uuid NOT NULL, "sectorId" uuid NOT NULL, CONSTRAINT "PK_subject_sectors" PRIMARY KEY ("subjectId", "sectorId"))`
     );
 
     await queryRunner.query(
@@ -33,7 +37,19 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     );
 
     await queryRunner.query(
-      `ALTER TABLE "subjects" ADD CONSTRAINT "FK_subjects_sector" FOREIGN KEY ("sectorId") REFERENCES "sectors"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`
+      `ALTER TABLE "subject_sectors" ADD CONSTRAINT "FK_subject_sectors_subject" FOREIGN KEY ("subjectId") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+    );
+
+    await queryRunner.query(
+      `ALTER TABLE "subject_sectors" ADD CONSTRAINT "FK_subject_sectors_sector" FOREIGN KEY ("sectorId") REFERENCES "sectors"("id") ON DELETE CASCADE ON UPDATE NO ACTION`
+    );
+
+    await queryRunner.query(
+      `CREATE INDEX "IDX_subject_sectors_subject" ON "subject_sectors" ("subjectId")`
+    );
+
+    await queryRunner.query(
+      `CREATE INDEX "IDX_subject_sectors_sector" ON "subject_sectors" ("sectorId")`
     );
 
     await queryRunner.query(
@@ -95,13 +111,17 @@ export class InitialSchema1700000000000 implements MigrationInterface {
       `ALTER TABLE "exams" DROP CONSTRAINT "FK_exams_sector"`
     );
     await queryRunner.query(
-      `ALTER TABLE "subjects" DROP CONSTRAINT "FK_subjects_sector"`
+      `ALTER TABLE "subject_sectors" DROP CONSTRAINT "FK_subject_sectors_sector"`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "subject_sectors" DROP CONSTRAINT "FK_subject_sectors_subject"`
     );
     await queryRunner.query(`DROP TABLE "user_answers"`);
     await queryRunner.query(`DROP TABLE "question_options"`);
     await queryRunner.query(`DROP TABLE "questions"`);
     await queryRunner.query(`DROP TABLE "exams"`);
     await queryRunner.query(`DROP TABLE "users"`);
+    await queryRunner.query(`DROP TABLE "subject_sectors"`);
     await queryRunner.query(`DROP TABLE "subjects"`);
     await queryRunner.query(`DROP TABLE "sectors"`);
   }

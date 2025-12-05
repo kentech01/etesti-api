@@ -4,16 +4,16 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
+  ManyToMany,
   OneToMany,
-  JoinColumn,
+  JoinTable,
   Unique,
 } from "typeorm";
 import { Sector } from "./Sector";
 import { Question } from "./Question";
 
 @Entity("subjects")
-@Unique(["value", "sectorId"])
+@Unique(["value"])
 export class Subject {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -21,15 +21,16 @@ export class Subject {
   @Column()
   label: string;
 
-  @Column()
+  @Column({ unique: true })
   value: string;
 
-  @Column()
-  sectorId: string;
-
-  @ManyToOne(() => Sector, (sector) => sector.subjects)
-  @JoinColumn({ name: "sectorId" })
-  sector: Sector;
+  @ManyToMany(() => Sector, (sector) => sector.subjects)
+  @JoinTable({
+    name: "subject_sectors",
+    joinColumn: { name: "subjectId", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "sectorId", referencedColumnName: "id" },
+  })
+  sectors: Sector[];
 
   @OneToMany(() => Question, (question) => question.subject)
   questions: Question[];

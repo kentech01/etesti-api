@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToMany,
 } from "typeorm";
 import { Exam } from "./Exam";
 import { Subject } from "./Subject";
@@ -32,6 +33,6 @@ export class Sector {
   @OneToMany(() => Exam, (exam) => exam.sector)
   exams: Exam[];
 
-  @OneToMany(() => Subject, (subject) => subject.sector)
+  @ManyToMany(() => Subject, (subject) => subject.sectors)
   subjects: Subject[];
 }
