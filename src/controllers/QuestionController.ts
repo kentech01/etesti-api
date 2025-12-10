@@ -26,6 +26,7 @@ export class QuestionController {
         orderNumber: req.body.orderNumber,
         points: req.body.points ?? 1,
         isActive: req.body.isActive ?? true,
+        isComplex: req.body.isComplex ?? false,
       });
 
       const savedQuestion = await questionRepository.save(question);
