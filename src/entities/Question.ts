@@ -62,6 +62,9 @@ export class Question {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isComplex: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 
