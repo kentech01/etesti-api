@@ -212,23 +212,14 @@ export class UserAnswerController {
       const accuracy =
         totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
 
-      // Determine if user has passed (>= 40% correct)
-      const hasPassed = accuracy >= 40;
-
-      // Update exam's hasPassed flag (note: this is global, not per-user)
-      const exam = await examRepository.findOne({ where: { id: examId } });
-      if (exam) {
-        exam.hasPassed = hasPassed;
-        await examRepository.save(exam);
-      }
-
       const results = {
         examId,
         totalQuestions,
         correctAnswers,
         incorrectAnswers,
         accuracy,
-        hasPassed,
+        // Per-user pass flag (do NOT persist on the Exam entity so it doesn’t leak across users)
+        hasPassed: accuracy >= 40,
         totalPoints,
         totalTimeSpent,
         answers: userAnswers,
