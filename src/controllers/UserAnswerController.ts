@@ -212,14 +212,19 @@ export class UserAnswerController {
       const accuracy =
         totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
 
+      // Only calculate hasPassed if user has actually submitted answers
+      // If no answers exist, hasPassed should be undefined (not false) to indicate test not taken
+      const hasPassed = userAnswers.length > 0 ? accuracy >= 40 : undefined;
+
       const results = {
         examId,
         totalQuestions,
         correctAnswers,
         incorrectAnswers,
         accuracy,
-        // Per-user pass flag (do NOT persist on the Exam entity so it doesn’t leak across users)
-        hasPassed: accuracy >= 40,
+        // Per-user pass flag (do NOT persist on the Exam entity so it doesn't leak across users)
+        // Only set if user has actually taken the test (has answers)
+        hasPassed,
         totalPoints,
         totalTimeSpent,
         answers: userAnswers,
