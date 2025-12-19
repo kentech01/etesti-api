@@ -28,6 +28,12 @@ export class User {
   @Column({ type: "text", nullable: true })
   avatarUrl: string | null;
 
+  @Column({ type: "integer", nullable: true })
+  municipality: number | null;
+
+  @Column({ type: "integer", nullable: true })
+  school: number | null;
+
   @Column({ default: true })
   isActive: boolean;
 
