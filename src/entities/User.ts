@@ -34,6 +34,9 @@ export class User {
   @Column({ type: "integer", nullable: true })
   school: number | null;
 
+  @Column({ type: "uuid", nullable: true })
+  sectorId: string | null;
+
   @Column({ default: true })
   isActive: boolean;
 

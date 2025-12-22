@@ -123,7 +123,30 @@ export class UserController {
         return;
       }
 
-      userRepository.merge(user, req.body);
+      const { firstName, lastName, avatarUrl, municipality, school, sectorId } =
+        req.body || {};
+
+      // Only allow updating whitelisted fields
+      if (typeof firstName === "string") {
+        user.firstName = firstName;
+      }
+      if (typeof lastName === "string") {
+        user.lastName = lastName;
+      }
+      if (typeof avatarUrl === "string" || avatarUrl === null) {
+        user.avatarUrl = avatarUrl;
+      }
+      if (typeof municipality === "number" || municipality === null) {
+        user.municipality = municipality;
+      }
+      if (typeof school === "number" || school === null) {
+        user.school = school;
+      }
+      if (typeof sectorId === "string" || sectorId === null) {
+        // Frontend is responsible for resolving sector info from the ID
+        user.sectorId = sectorId;
+      }
+
       const updatedUser = await userRepository.save(user);
       res.json(updatedUser);
     } catch (error) {
