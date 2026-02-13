@@ -1,7 +1,6 @@
 import { Response } from "express";
 import { AppDataSource } from "../config/database";
 import { UserAnswer } from "../entities/UserAnswer";
-// import { Exam } from "../entities/Exam";
 import { QuestionOption } from "../entities/QuestionOption";
 import { Question } from "../entities/Question";
 import { AuthRequest } from "../middleware/auth";
@@ -10,7 +9,6 @@ import { getOrCreateUser } from "./UserController";
 const userAnswerRepository = AppDataSource.getRepository(UserAnswer);
 const optionRepository = AppDataSource.getRepository(QuestionOption);
 const questionRepository = AppDataSource.getRepository(Question);
-// const _examRepository = AppDataSource.getRepository(Exam);
 
 export class UserAnswerController {
   static async submitAnswer(req: AuthRequest, res: Response): Promise<void> {
